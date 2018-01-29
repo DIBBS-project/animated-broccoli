@@ -587,10 +587,24 @@ class HostManager(object):
         :returns: dictionary of nodes and their status
         """
         nodes = {}
-        status, data = self._request("POST", "nodes/request/%d" % count)
-        if data is not None:
-            nodes = data.get('nodes')
         result = set()
+
+        # status, data = self._request("POST", "nodes/request/%d" % count)
+        # if data is not None:
+        #     nodes = data.get('nodes')
+        status, noderequest = self._request('POST', 'noderequests',
+                                            {'nodes_required': count})
+        while noderequest['status'] != 'WAITING':
+            time.sleep(1) # XXX: could use a websocket or something later
+            status, noderequest = self._request(
+                'GET',
+                'noderequests/{}'.format(noderequest['id'])
+            )
+        nodes = noderequest['nodes']
+
+        nodes = {node['name']: node for node in nodes}
+
+        print "received nodes = %s" % nodes
         for node in nodes:
             LOG.debug("LCRC request_more_hosts received {} {}".format(node, nodes[node]))
             result.add((node, node))
