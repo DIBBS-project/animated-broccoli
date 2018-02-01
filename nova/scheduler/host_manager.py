@@ -73,6 +73,8 @@ host_manager_opts = [
                default=True,
                help='Determines if the Scheduler tracks changes to instances '
                     'to help with its filtering decisions.'),
+    cfg.StrOpt('balancer_username', default='admin'),
+    cfg.StrOpt('balancer_password', default='secret'),
 ]
 
 CONF = cfg.CONF
@@ -345,9 +347,11 @@ class HostManager(object):
 
         action_url = "http://%s:%s%s/%s" % (self.host, self.port,
                                              self.api_url, action_url)
+        auth = requests.auth.HTTPBasicAuth(CONF.balancer_username,
+                                           CONF.balancer_password)
         try:
             res = requests.request(method, action_url, data=body,
-                                   headers=headers)
+                                   auth=auth, headers=headers)
             status_code = res.status_code
             if status_code in (requests.codes.OK,
                                requests.codes.CREATED,
